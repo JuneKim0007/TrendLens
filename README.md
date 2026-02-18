@@ -1,42 +1,37 @@
-Personal Project
+# Personal Project
 
-Using Python, Pandas, NumPy, Matplotlib, and SQLite to visualize and analyze stock price data.
-########
-So far...
+## Overview
+**Language:** Python  
+**Tech Stack:** SQLite, NumPy, Pandas, Matplotlib  
+**API Used:** Yahoo Finance (`yfinance`)  
 
-The program retrieves stock data from .yfinance API and stores it in a local SQLite database.
+This project uses **Pandas** and **SQLite** to maintain a local database for long-term financial data analysis, while fetching real-time data from the public **Yahoo Finance API** on demand. It provides **2D and 3D visualizations** to analyze trends across daily, hourly, and monthly intervals.
 
-By default, it loads data from the local database unless specifically told to update via .yfinance API.
+## Features
+- **Exponential Moving Average (EMA)** for trend smoothing:
+  - β = 0.3 → minute-level  
+  - β = 0.24 → daily  
+  - β = 0.18 → weekly  
+  - β = 0.15 → biweekly  
+  - β = 0.13 → monthly  
+- **Deviation Calculation:**
+  - deviation_new = (1 - α) * deviation_current + α * |difference|
+  - where α ≈ 0.3
+- **Trend Analysis Granularity:**
+- 5-minute EMA for hourly trends  
+- Hourly EMA for daily trends  
+- Daily EMA for weekly/monthly trends  
+- **Data Interpolation:**  
+- Linear interpolation for hourly/daily trends  
+- Cubic spline interpolation for fine adjustments  
 
-Retrieved data is automatically processed to compute seful metrics and variables such as volume-adjusted prices, percentage price changes, and more.
-######
+## Dependencies
+- Python 3.13
+- NumPy  
+- Pandas  
+- Matplotlib  
+- SQLite3 (built-in)  
+- Yahoo Finance API (`yfinance`)  
 
 
-
-#Near-term goals include:
-
-##Data Visualization Enhancements:
-
-  1: 3D charts: bar charts, surface plots, and wireframes.
-
-  2: Functions for sorting data by date intervals.
-
-  3: 2D visualizations: bar charts and line charts with volume displayed beneath.
-
-##Probability & Statistics Integration:
-
-  1:Z-scores calculated from user-defined sample means. 
-
-  2:A simple predictive model using linear regression.
-
-  3:Visualizations of sample distributions.
-
-  
-Looking Ahead
-
-  Identifying more variables (industry type, per,... etc) in relation to stock prices 
-
-  Integrating the OpenAI API to refine distributions and improve sample mean selection.
-
-  Building a lightweight backend and frontend to display data on a customizable webpage.
-
+## usage
