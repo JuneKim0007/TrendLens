@@ -130,6 +130,12 @@ This is the macro trend line — it shows where the price was "trying to go" on 
 
 Three separate SQLite files, each chosen for how consistent the data needs to be.
 
+Each database is organized into separate files based on specific criteria:
+
+- **Consistency requirements:** Data that is tightly coupled and must remain synchronized is grouped together to prevent cascading inconsistencies if one dataset becomes invalid.
+- **Analysis Phase:** Databases are separated according to the required analysis interval (e.g., 5-minute, hourly, daily),\ allowing optimized storage and querying strategies for each timeframe.
+- **Separation of concerns:** Core functions are designed to interact with the database only once per operation.\Interface layers handle data aggregation, transformation, and cumulative computations before storing the processed results into dedicated databases.
+
 **`ticker_list.db`** — just a list of validated ticker symbols. Cheap to query, rarely changes.\
 When a ticker is requested for the first time, it gets validated against Yahoo Finance and stored here. Every subsequent call skips the yfinance round-trip entirely.
 
@@ -208,4 +214,5 @@ trendlens/
         ├── utils.py             # matplotlib backend
         └── plot.py              # single-panel chart
 ```
+
 
