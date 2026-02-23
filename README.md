@@ -1,6 +1,12 @@
 # TrendLens
 
-Quick stock trend analysis that cuts through short-term noise. Fetches 60 days of 5-minute data from Yahoo Finance, builds weighted EMAs for each timeframes, and fits cubic splines using interpolants computed based on EMA analysis.
+A fast stock trend analysis tool designed to minimize market noise and provide clearer insight into the general trend of price movements.
+
+Fetches 60 days of 5-minute data from Yahoo Finance, builds weighted EMAs for each timeframes, and fits cubic splines using interpolants computed based on EMA analysis.
+
+
+**Tech Stack:** Python 3.13, SQLite, NumPy, Pandas, Matplotlib, yfinance
+
 
 ## Installation:
 ```bash
@@ -16,23 +22,24 @@ dl = DataLoader()
 dl.visualize("AAPL")
 ```
 
-One call fetches data, runs the full analysis, and plots everything on a single chart such as
+One call fetches data, runs the full analysis, and plots everything on a single chart such as:
 raw price, sliding average, EMA, daily spline curve, and the long-range trend spline.
 
-**Stack:** Python 3.13, SQLite, NumPy, Pandas, Matplotlib, yfinance
 
 ---
 
 ## What It Does
 
-The core idea: smaller intervals carry too much noise to be useful on their own, but they contain real signal when aggregated properly. So instead of picking one timeframe and hoping for the best, this builds upward:
+The core idea: smaller intervals carry too much noise to be useful on their own, but they contain real signal when aggregated properly. 
+
+Instead of picking one timeframe and hoping for the best, this builds upward:
 
 - 5-minute bars => per-bar volatility weights => EMA
 - 12 five-minute betas averaged => hourly EMA
 - ~8 hourly EMA values => daily cubic spline => one "interpolant" per day
 - all daily interpolants => one long cubic spline across the full range
 
-Each stage feeds into the next (cummulative).
+Each stage feeds into the next (cummulative) stage.
 
 The weight at every level adapts to how volatile that interval actually was, so calm periods get trusted more and noisy periods get smoothed harder.
 
@@ -123,21 +130,33 @@ This is the macro trend line — it shows where the price was "trying to go" on 
 
 Three separate SQLite files, each chosen for how consistent the data needs to be.
 
-**`ticker_list.db`** — just a list of validated ticker symbols. Cheap to query, rarely changes. When a ticker is requested for the first time, it gets validated against Yahoo Finance and stored here. Every subsequent call skips the yfinance round-trip entirely.
+**`ticker_list.db`** — just a list of validated ticker symbols. Cheap to query, rarely changes.\
+When a ticker is requested for the first time, it gets validated against Yahoo Finance and stored here. Every subsequent call skips the yfinance round-trip entirely.
 
-**`stock_price.db`** — raw 5-minute OHLCV. Written once when data is fetched, read many times during analysis. The fetcher checks what date range already exists locally before hitting Yahoo Finance, so it only pulls what's missing.
+**`stock_price.db`** — raw 5-minute OHLCV. 
+Written once when data is fetched, read many times during analysis. 
+The fetcher checks what date range already exists locally before hitting Yahoo Finance, so it only pulls what's missing.
 
 **`analysis.db`** — all computed results (5min EMA, hourly EMA, spline coefficients, per-day metrics). Gets dropped and rebuilt on each analysis run. This is intentional: analysis is deterministic given the raw data, so there's no point in careful incremental updates. Cheaper to just recompute.
 
 ### Validation
 
-Every user-facing string passes through `safetyguard.py` before touching SQL or yfinance. It rejects SQL injection patterns (`DROP`, `DELETE`, `--`, `;`, quotes), enforces ticker format (1–10 chars, uppercase alphanumeric), and validates date strings. All SQL uses parameterized `?` placeholders.
+Every user-facing string passes through `safetyguard.py` before touching SQL or yfinance. 
+
+It rejects SQL injection patterns (`DROP`, `DELETE`, `--`, `;`, quotes).
+__Note: this may not be needed since this api is designed to be used locally, but its always nice have some safety mechanism__ 
+
+Validation enforces ticker format (1–10 chars, uppercase alphanumeric), and validates date strings.
+The validation layer acts as a pre-check mechanism, blocking costly database operations and yfinance API calls when the request is determined to be invalid
 
 ### Caching
 
-Spline lambdas (the callable functions rebuilt from stored coefficients) live in an in-memory LRU cache with clock-sweep eviction. Two pools: 16 slots for daily splines, 8 for weekly data. This avoids re-reading and re-parsing JSON coefficients from the DB when `visualize()` is called repeatedly on the same ticker.
+Spline lambdas (the callable functions rebuilt from stored coefficients) live in an in-memory LRU cache with clock-sweep eviction).\
+Two pools: 16 slots for daily splines, 8 for weekly data. This avoids re-reading and re-parsing coefficients stroed in the DB when `visualize()` is called repeatedly on the same ticker.
 
-The clock-sweep works like a circular buffer with reference bits. On eviction, the hand sweeps around clearing reference bits until it finds one that's already zero — that slot gets reused. Accessed entries get their bit set back to 1. Simple, O(1) amortized, no heap allocation.
+The clock-sweep works like a circular buffer with reference bits.\
+On eviction, the hand sweeps around clearing reference bits until it finds one that's already zero and slot gets reused.\
+Accessed entries get their bit set back to 1. Simple, O(1) amortized, no heap allocation.
 
 ### Quick DB Pinging
 
@@ -148,15 +167,6 @@ Before running the full cascade, `store.has_data()` does a lightweight existence
 ## Visualization
 
 `depict()` draws everything on a single chart:
-
-| Layer | What it shows |
-|---|---|
-| Gray | Raw 5-min close prices (faded background) |
-| Blue | 13-bar sliding average |
-| Orange | EMA with linear connections between points |
-| Red | Daily cubic spline through hourly EMA knots |
-| Purple + dots | Long spline through all daily interpolants |
-
 ```python
 dl.visualize("AAPL")                                       # default 60d, hourly EMA, daily spline
 dl.visualize("AAPL", ema_interval="5min")                  # 5-min EMA resolution
@@ -164,7 +174,9 @@ dl.visualize("AAPL", cubic_interval="week")                # adds long spline
 dl.visualize("META", start="2026-01-01", end="2026-02-15") # custom range
 ```
 
-`ema_interval` is `"5min"` or `"1hr"`. `cubic_interval` is `"day"` (daily spline only) or `"week"` (daily + long spline). `data_type` is `"close"` or `"open"`.
+- `ema_interval` is `"5min"` or `"1hr"`.
+- `cubic_interval` is `"day"` (daily spline only) or `"week"` (daily + long spline).
+- `data_type` is `"close"` or `"open"` for closing and open price.
 
 ---
 
@@ -196,3 +208,4 @@ trendlens/
         ├── utils.py             # matplotlib backend
         └── plot.py              # single-panel chart
 ```
+
