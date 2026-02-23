@@ -1,5 +1,6 @@
 # TrendLens
 
+
 A fast stock trend analysis tool designed to minimize market noise and provide clearer insight into the general trend of price movements.
 
 Fetches 60 days of 5-minute data from Yahoo Finance, builds weighted EMAs for each timeframes, and fits cubic splines using interpolants computed based on EMA analysis.
@@ -7,6 +8,11 @@ Fetches 60 days of 5-minute data from Yahoo Finance, builds weighted EMAs for ea
 
 **Tech Stack:** Python 3.13, SQLite, NumPy, Pandas, Matplotlib, yfinance
 
+## Update Note:
+_Version 1.0 — August 2025_
+_Updated Version 2.0 — February 2026_
+Version 2.0 introduces user-facing APIs, resolves plotting issues, and refactors the database workflow for more efficient access.\
+Database and yfinance calls have been significantly reduced to eliminate primary performance bottlenecks. The project structure has also been reorganized, organizing scattered data and improving overall maintainability.
 
 ## Installation:
 ```bash
@@ -214,6 +220,7 @@ trendlens/
         ├── utils.py             # matplotlib backend
         └── plot.py              # single-panel chart
 ```
+
 
 
 
